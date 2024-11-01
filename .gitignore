@@ -11,5 +11,6 @@ data/
 
 .idea/
 
+token.json
 credentials.txt
 client_secrets.json
