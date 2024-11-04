@@ -1,5 +1,5 @@
 from typing import List, Dict, Optional
-from google_drive_utils import GoogleDriveUtility
+from .google_drive_utils import GoogleDriveUtility
 
 
 def make_dictionaries(
@@ -102,8 +102,9 @@ def _extract_url(
     # Return URL and the rest of the document
     return url, " ".join(lines[1:])
 
-files = GoogleDriveUtility.list_all_files(
+if __name__ == "__main__":
+    files = GoogleDriveUtility.list_all_files(
         folder_id="1a_6_-TrJe8srDlxPRC3kvQWf1bErR4aN"
-)
+    )
 
-print(make_dictionaries(files, updated_date="2024-11-01", has_url=True))
+    print(make_dictionaries(files, updated_date="2024-11-01", has_url=True))
