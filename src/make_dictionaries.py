@@ -5,7 +5,6 @@ from .google_drive_utils import GoogleDriveUtility
 def make_dictionaries(
         files: List[Dict],
         updated_date: str,
-        has_url: bool = False
 ) -> List[Dict]:
     """
     Convert a list of Google Drive files into a list of dictionaries.
@@ -25,18 +24,26 @@ def make_dictionaries(
             # Sanitize file title
             file_title = _sanitize_filename(file["title"])
 
+            # Check if file is for leaders only
+            if "KUN FOR LEDER" in file_title:
+                forLeaders = True
+                file_title = file_title.replace("- KUN FOR LEDERE", "").replace("- KUN FOR LEDER", "").strip()
+            else:
+                forLeaders = False
+
             # Determine file type and read content
             file_text = _read_file_content(file, file_title)
 
             # Process URL if requested
-            url, file_text = _extract_url(file_text) if has_url else ("", file_text)
+            url, file_text = _extract_url(file_text)
 
             # Create file dictionary
             file_dict = {
                 "title": file_title,
                 "body": file_text,
                 "LAST UPDATED": updated_date,
-                "URL": url
+                "URL": url,
+                "forLeaders": forLeaders
             }
 
             list_of_dictionaries.append(file_dict)
@@ -80,7 +87,7 @@ def _read_file_content(
     elif ".txt" in file_title:
         return GoogleDriveUtility.read_google_doc(file["id"], file_type="txt")
     else:
-        return GoogleDriveUtility.read_google_doc(file["id"], is_docx="google_doc")
+        return GoogleDriveUtility.read_google_doc(file["id"], file_type="google_doc")
 
 
 def _extract_url(
@@ -97,14 +104,20 @@ def _extract_url(
     """
     # Remove potential BOM (Byte Order Mark)
     lines = file_text.split("\n")
-    url = lines[0].replace("\ufeff", "").strip()
+    # Check if first line is URL
+    if "https" in lines[0]:
+        url = (lines[0].replace("\ufeff", ""))
+        url = url.replace('Dokument URL:', "")
+        url = url.strip()
+    else:
+        url = ""
 
     # Return URL and the rest of the document
     return url, " ".join(lines[1:])
 
 if __name__ == "__main__":
     files = GoogleDriveUtility.list_all_files(
-        folder_id="1a_6_-TrJe8srDlxPRC3kvQWf1bErR4aN"
+        folder_id="12E8sK7BqYrplpL9UWtXB4I3D6QvvZxDN"
     )
 
     print(make_dictionaries(files, updated_date="2024-11-01", has_url=True))

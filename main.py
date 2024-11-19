@@ -11,4 +11,7 @@ files = GoogleDriveUtility.list_all_files(
     )
 
 # Create a list of dictionaries for the files
-list_of_dictionaries = make_dictionaries(files, updated_date="2024-11-01", has_url=True)
+list_of_dictionaries = make_dictionaries(files, updated_date="2024-11-01")
+
+if __name__ == "__main__":
+    print(list_of_dictionaries)
