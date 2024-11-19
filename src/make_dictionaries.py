@@ -65,7 +65,13 @@ def _sanitize_filename(filename: str) -> str:
     Returns:
         Sanitized filename
     """
-    return filename.replace("?", "_").replace("/", "_")
+    # Replace problematic characters
+    filename_clean = filename.replace("?", "_").replace("/", "_")
+    # Remove extensions
+    filename_clean = filename_clean.replace(".docx", "").replace(".txt", "")
+    # Remove whitespace
+    filename_clean = filename_clean.strip()
+    return filename_clean
 
 
 def _read_file_content(
