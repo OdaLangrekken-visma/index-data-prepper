@@ -1,5 +1,9 @@
 from typing import List, Dict, Optional
+
+from pygments.lexers.webassembly import keywords
+
 from .google_drive_utils import GoogleDriveUtility
+from .keywords import extract_keywords
 
 
 def make_dictionaries(
@@ -22,7 +26,8 @@ def make_dictionaries(
     for file in files:
         try:
             # Sanitize file title
-            file_title = _sanitize_filename(file["title"])
+            file_title = file["title"]
+            file_title_clean = _sanitize_filename(file_title)
 
             # Check if file is for leaders only
             if "KUN FOR LEDER" in file_title:
@@ -37,12 +42,16 @@ def make_dictionaries(
             # Process URL if requested
             url, file_text = _extract_url(file_text)
 
+            # Get keywords from the document text
+            keywords = _create_keywords(file_text)
+
             # Create file dictionary
             file_dict = {
-                "title": file_title,
+                "title": file_title_clean,
                 "body": file_text,
                 "LAST UPDATED": updated_date,
                 "URL": url,
+                "tags": keywords,
                 "forLeaders": forLeaders
             }
 
@@ -88,12 +97,8 @@ def _read_file_content(
     Returns:
         File content as a string
     """
-    if ".docx" in file_title:
-        return GoogleDriveUtility.read_google_doc(file["id"], file_type="docx")
-    elif ".txt" in file_title:
-        return GoogleDriveUtility.read_google_doc(file["id"], file_type="txt")
-    else:
-        return GoogleDriveUtility.read_google_doc(file["id"], file_type="google_doc")
+    file_type = file["file_type"]
+    return GoogleDriveUtility.read_google_doc(file["id"], file_type=file_type)
 
 
 def _extract_url(
@@ -120,6 +125,20 @@ def _extract_url(
 
     # Return URL and the rest of the document
     return url, " ".join(lines[1:])
+
+def _create_keywords(file_text: str) -> List[str]:
+    """
+    Extract keywords from the document text.
+
+    Args:
+        file_text: Full document text
+
+    Returns:
+        List of extracted keywords
+    """
+    # Split text into words
+    keywords = extract_keywords(file_text)
+    return keywords
 
 if __name__ == "__main__":
     files = GoogleDriveUtility.list_all_files(

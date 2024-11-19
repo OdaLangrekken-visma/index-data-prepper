@@ -12,6 +12,7 @@ from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
 import docx
+import zipfile
 
 
 class GoogleDriveUtility:
@@ -87,10 +88,23 @@ class GoogleDriveUtility:
                 except (ValueError, TypeError):
                     modified_date = None
 
+                # Get file type
+                mime_type = file.get('mimeType')
+                if mime_type == 'application/vnd.google-apps.document':
+                    file_type = 'google_doc'
+                elif mime_type == 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+                    file_type = 'docx'
+                elif mime_type == 'text/plain':
+                    file_type = 'txt'
+                else:
+                    file_type = 'unsupported'
+
+
                 all_files.append({
                     "title": file.get('title', 'Untitled'),
                     "id": file.get('id', ''),
-                    "modified": str(modified_date) if modified_date else 'Unknown'
+                    "modified": str(modified_date) if modified_date else 'Unknown',
+                    "file_type": file_type
                 })
 
             return all_files
@@ -155,9 +169,10 @@ class GoogleDriveUtility:
                 # Export Google Doc as DOCX
                 export_mime_type = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
                 request = service.files().export_media(fileId=doc_id, mimeType=export_mime_type)
+
             else:
                 # Download other file types directly
-                request = service.files().get_media(fileId=doc_id)
+                request = service.files().get_media(fileId=doc_id, alt="media")
 
             # Download file in chunks
             downloader = MediaIoBaseDownload(fh, request)
@@ -168,12 +183,14 @@ class GoogleDriveUtility:
             # Move pointer to beginning of BytesIO object
             fh.seek(0)
 
+
+
             # Process file based on type
-            if file_type in ['google_doc', 'docx']:
+            if file_type in ['google_doc', "docx"]:
                 document = docx.Document(fh)
                 text = [para.text for para in document.paragraphs]
                 return "\n".join(text)
-            elif file_type == 'txt':
+            elif file_type in ['txt']:
                 return fh.read().decode('utf-8')
 
         except Exception as e:
